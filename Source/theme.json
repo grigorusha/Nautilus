@@ -1,0 +1,96 @@
+{
+    "defaults": {
+        "colours": {
+            "normal_bg": "#91fb91",
+            "hovered_bg": "#BBffBB",
+            "disabled_bg": "#cb6e61",
+            "selected_bg": "#40B040",
+            "active_bg": "#409040",
+            "dark_bg": "#86fb91",
+            "normal_text": "#202020",
+            "hovered_text": "#303030",
+            "selected_text": "#404040",
+            "disabled_text": "#000000",
+            "normal_border": "#71db71"
+        }
+    },
+    "button":
+    {
+        "colours":
+        {
+            "normal_border": "#30AA30",
+            "normal_bg": "#86fb91"
+        },
+        "misc":
+        {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "10",
+            "border_width": "2",
+            "shadow_width": "2"
+        }
+    },
+    "drop_down_menu":
+    {
+        "colours":
+        {
+            "normal_border": "#30AA30",
+            "normal_bg": "#86fb91"
+        },
+        "misc":
+        {
+            "shadow_width": "2",
+            "border_width": "2",
+            "expand_direction": "down"
+        }
+    },
+    "check_box": 
+    {
+        "misc": 
+        {
+            "shadow_width": "2",
+            "border_width": "2",
+            "text_offset": 10
+        }
+    },
+
+    "window":
+    {
+        "misc":
+        {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "5,5,5,5"
+        }
+    },
+    "window.#title_bar":
+    {
+        "misc":
+        {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "5,0,0,0"
+        }
+    },
+    "window.#close_button":
+    {
+        "misc":
+        {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "0,5,0,0"
+        }
+    },
+    "window.#dismiss_button":
+    {
+        "colours":
+        {
+            "normal_border": "#30AA30",
+            "normal_bg": "#86fb91"
+        },
+        "misc":
+        {
+            "shape": "rounded_rectangle",
+            "shape_corner_radius": "10",
+            "border_width": "2",
+            "shadow_width": "2"
+        }
+    }
+
+}
