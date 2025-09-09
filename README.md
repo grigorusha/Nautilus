@@ -5,3 +5,4 @@ This is a simulator of the famous "Nautilus" and "Square-1" puzzles.
 ![](https://i.imgur.com/Z9xLTeo.png)
 [![Download Nautilus](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/nautiluspuzzle/files/latest/download)
 
+![](https://i.imgur.com/uIi4CYq.gif)
