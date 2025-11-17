@@ -14,6 +14,7 @@
             height: 100vh;
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
+            touch-action: manipulation; /* Улучшает отзывчивость на мобильных */
         }
         #game-container {
             position: relative;
@@ -46,7 +47,7 @@
         }
         .info-panel {
             position: absolute;
-            bottom: 40px; /* Подняли на 1.5 см (было 10px) */
+            bottom: 100px; /* Подняли еще на 1.5 см (было 40px) */
             background-color: rgba(255, 255, 255, 0.8);
             padding: 5px;
             border-radius: 3px;
@@ -952,7 +953,12 @@
                 }
             });
             
-            // Колесо мыши для вращения дисков (ИСПРАВЛЕНО НАПРАВЛЕНИЕ)
+            // Блокировка контекстного меню при клике правой кнопкой
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+            
+            // Колесо мыши для вращения дисков
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const rect = canvas.getBoundingClientRect();
@@ -967,7 +973,6 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
                     if (distance < DISK_RADIUS) {
-                        // ИЗМЕНЕНО: поменяно направление вращения
                         if (!flOneStep) {
                             rotateDisk(disk, e.deltaY > 0 ? -1 : 1);
                         } else {
@@ -978,13 +983,89 @@
                 }
             });
             
-            // Клик для переворота дисков
-            canvas.addEventListener('click', (e) => {
+            // Клик мышкой для вращения дисков
+            canvas.addEventListener('mousedown', (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
                 
-                if (Math.abs(mouseY - diskPuzzle[0].y) < DISK_RADIUS) {
+                for (const disk of diskPuzzle) {
+                    if (disk.animating) continue;
+                    
+                    const dx = mouseX - disk.x;
+                    const dy = mouseY - disk.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < DISK_RADIUS) {
+                        // Левая кнопка - против часовой стрелки
+                        if (e.button === 0) {
+                            if (!flOneStep) {
+                                rotateDisk(disk, 1);
+                            } else {
+                                rotateDisk(disk, DISK_ANGLE);
+                            }
+                        }
+                        // Правая кнопка - по часовой стрелке
+                        else if (e.button === 2) {
+                            if (!flOneStep) {
+                                rotateDisk(disk, -1);
+                            } else {
+                                rotateDisk(disk, -DISK_ANGLE);
+                            }
+                        }
+                        break;
+                    }
+                }
+            });
+            
+            // Тап пальцем для вращения дисков (по часовой стрелке)
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const mouseX = touch.clientX - rect.left;
+                const mouseY = touch.clientY - rect.top;
+                
+                for (const disk of diskPuzzle) {
+                    if (disk.animating) continue;
+                    
+                    const dx = mouseX - disk.x;
+                    const dy = mouseY - disk.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < DISK_RADIUS) {
+                        // Тап - поворот по часовой стрелке
+                        if (!flOneStep) {
+                            rotateDisk(disk, -1);
+                        } else {
+                            rotateDisk(disk, -DISK_ANGLE);
+                        }
+                        break;
+                    }
+                }
+            });
+            
+            // Клик для переворота дисков
+            canvas.addEventListener('click', (e) => {
+                // Проверяем, был ли клик на диске
+                let clickedOnDisk = false;
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                for (const disk of diskPuzzle) {
+                    const dx = mouseX - disk.x;
+                    const dy = mouseY - disk.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < DISK_RADIUS) {
+                        clickedOnDisk = true;
+                        break;
+                    }
+                }
+                
+                // Переворачиваем только если клик был не на диске
+                if (!clickedOnDisk && Math.abs(mouseY - diskPuzzle[0].y) < DISK_RADIUS) {
                     if (canFlipAllDisk()) {
                         flipDisks();
                     }
