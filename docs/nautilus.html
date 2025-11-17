@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nautilus Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        select, button {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .info-panel {
+            position: absolute;
+            bottom: 40px; /* Подняли на 1.5 см (было 10px) */
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 3px;
+            min-width: 150px;
+            text-align: center;
+            transform: translateX(-50%);
+        }
+        #info-panel-1 {
+            left: 200px; /* WIDTH / 4 */
+        }
+        #info-panel-2 {
+            left: 600px; /* WIDTH - WIDTH / 4 */
+        }
+        
+        /* Стили для модального окна About */
+        #about-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        #about-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        #close-about {
+            float: right;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        #about-content a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        #about-content a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <div id="ui-container">
+            <div class="controls">
+                <select id="puzzle-selector">
+                    <option value="Nautilus 7">Nautilus 7</option>
+                    <option value="Nautilus 8">Nautilus 8</option>
+                    <option value="Nautilus 10">Nautilus 10</option>
+                    <option value="Nautilus 12">Nautilus 12</option>
+                    <option value="Helix 7r">Helix 7r</option>
+                    <option value="Helix 7r-b">Helix 7r-b</option>
+                    <option value="Helix 11r">Helix 11r</option>
+                    <option value="Helix 8">Helix 8</option>
+                    <option value="Helix 9">Helix 9</option>
+                    <option value="Helix 11">Helix 11</option>
+                    <option value="Helix 11-b">Helix 11-b</option>
+                    <option value="Helix 12">Helix 12</option>
+                    <option value="Helix 13">Helix 13</option>
+                    <option value="Helix 13-b">Helix 13-b</option>
+                    <option value="Helix 14">Helix 14</option>
+                    <option value="Helix 14-b">Helix 14-b</option>
+                    <option value="Helix 19">Helix 19</option>
+                    <option value="Helix 20">Helix 20</option>
+                    <option value="Phibonachi 3">Phibonachi 3</option>
+                    <option value="Phibonachi 4">Phibonachi 4</option>
+                    <option value="Phibonachi 4-b">Phibonachi 4-b</option>
+                    <option value="Phibonachi 4-c">Phibonachi 4-c</option>
+                    <option value="Phibonachi 4-d">Phibonachi 4-d</option>
+                    <option value="Phibonachi 4-e">Phibonachi 4-e</option>
+                    <option value="Phibonachi 5">Phibonachi 5</option>
+                    <option value="Phibonachi 5-b">Phibonachi 5-b</option>
+                    <option value="Phibonachi 6">Phibonachi 6</option>
+                    <option value="Phibonachi 6-b">Phibonachi 6-b</option>
+                    <option value="Square-1">Square-1</option>
+                    <option value="Square-2">Square-2</option>
+                    <option value="Easy Square-1">Easy Square-1</option>
+                    <option value="Nautilus Cube">Nautilus Cube</option>
+                    <option value="Cheese">Cheese</option>
+                    <option value="Sajt">Sajt</option>
+                    <option value="Rainbow Puck">Rainbow Puck</option>
+                </select>
+                <button id="reset-btn">Reset</button>
+                <button id="scramble-btn">Scramble</button>
+                <button id="left-btn"><<</button>
+                <button id="right-btn">>></button>
+                <button id="about-btn">About</button>
+                <label>
+                    <input type="checkbox" id="one-step-checkbox"> One step
+                </label>
+            </div>
+            <div id="status-label">Simulator: Nautilus 7</div>
+        </div>
+        <div id="info-panel-1" class="info-panel">Top sectors: <br>Total: </div>
+        <div id="info-panel-2" class="info-panel" style="display: none;">Top sectors: <br>Total: </div>
+    </div>
+
+    <!-- Модальное окно About -->
+    <div id="about-modal">
+        <div id="about-content">
+            <span id="close-about">&times;</span>
+            <h2>About Nautilus Simulator</h2>
+            <p>Grigorusha Puzzle Simulators: <a href="https://twistypuzzles.com/forum/viewtopic.php?t=38581" target="_blank">https://twistypuzzles.com/forum/viewtopic.php?t=38581</a></p>
+            <p>Grigorusha Simulators Git: <a href="https://github.com/grigorusha/nautilus" target="_blank">https://github.com/grigorusha/nautilus</a></p>
+            <p>Search and Explore Nautilus: <a href="https://twistypuzzles.com/forum/viewtopic.php?t=34998" target="_blank">https://twistypuzzles.com/forum/viewtopic.php?t=34998</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Константы
+        const VERSION = "1.0";
+        const DISK_RADIUS = 150;
+        const DISK_Y = DISK_RADIUS + 80; // Опустили на 1 см (было +70)
+        const WIDTH = 800;
+        const HEIGHT = 600;
+        const ROTATION_SPEED = 4;
+
+        // Цвета
+        const clWhite = '#F0F0F0';
+        const clGainsboro = '#C0C0C0';
+        const clSilver = '#A0A0A0';
+        const clGray = '#707070';
+        const clBlack = '#202020';
+        const clCyan = '#00FFFF';
+        const clDeepSky = '#00BFFF';
+        const clTeal = '#008080';
+        const clBlue = '#0000FF';
+        const clNavy = '#000080';
+        const clCoral = '#FF7F50';
+        const clRed = '#FF0000';
+        const clCrimson = '#DC143C';
+        const clIndian = '#CD5C5C';
+        const clBrown = '#800000';
+        const clYellow = '#FFFF00';
+        const clOrange = '#FF6000';
+        const clKhaki = '#F0E68C';
+        const clGolden = '#DDBB20';
+        const clOlive = '#808000';
+        const clGreenYellow = '#ADFF2F';
+        const clLime = '#00FF00';
+        const clSea = '#3cb371';
+        const clGreen = '#008000';
+        const clDarkGreen = '#006400';
+        const clPink = '#FF69B4';
+        const clFuchsia = '#FF00FF';
+        const clPale = '#D07090';
+        const clOrchid = '#DA70D6';
+        const clLilia = '#D080F0';
+        const clPurple = '#800080';
+
+        // Глобальные переменные
+        let diskPuzzle = [];
+        let diskCount = 0;
+        let separatorVisible = false;
+        let DISK_ANGLE = 0;
+        let flOneStep = false;
+        let currentPuzzle = "Nautilus 7";
+
+        // Элементы DOM
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const puzzleSelector = document.getElementById('puzzle-selector');
+        const resetBtn = document.getElementById('reset-btn');
+        const scrambleBtn = document.getElementById('scramble-btn');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
+        const aboutBtn = document.getElementById('about-btn');
+        const oneStepCheckbox = document.getElementById('one-step-checkbox');
+        const statusLabel = document.getElementById('status-label');
+        const infoPanel1 = document.getElementById('info-panel-1');
+        const infoPanel2 = document.getElementById('info-panel-2');
+        
+        // Элементы модального окна About
+        const aboutModal = document.getElementById('about-modal');
+        const aboutContent = document.getElementById('about-content');
+        const closeAbout = document.getElementById('close-about');
+
+        // Инициализация игры
+        function initGame() {
+            diskPuzzle = [];
+            DISK_ANGLE = 0;
+            const result = puzzleSet(currentPuzzle, DISK_Y, WIDTH, HEIGHT);
+            diskPuzzle = result.diskPuzzle;
+            DISK_ANGLE = result.DISK_ANGLE;
+            
+            if (diskPuzzle.length === 0) return;
+            
+            const sectorsStr = diskPuzzle[0].sectors.join(", ");
+            statusLabel.textContent = `${currentPuzzle}: ${sectorsStr} (${DISK_ANGLE} step)`;
+            
+            diskCount = diskPuzzle.length;
+            separatorVisible = false;
+            
+            // Обновляем позиции информационных панелей
+            updateInfoPanelPositions();
+            
+            for (const disk of diskPuzzle) {
+                calcSpline(disk);
+            }
+            
+            updateUI();
+        }
+
+        // Обновление позиций информационных панелей
+        function updateInfoPanelPositions() {
+            if (diskCount === 1) {
+                infoPanel1.style.left = '400px'; // Центр (WIDTH / 2)
+                infoPanel2.style.display = 'none';
+            } else if (diskCount > 1) {
+                infoPanel1.style.left = '200px'; // WIDTH / 4
+                infoPanel2.style.left = '600px'; // WIDTH - WIDTH / 4
+                infoPanel2.style.display = 'block';
+            }
+        }
+
+        // Функция для вычисления НОД
+        function gcd(a, b) {
+            return b ? gcd(b, a % b) : a;
+        }
+
+        // Функция для вычисления НОД из массива
+        function gcdArray(arr) {
+            return arr.reduce((a, b) => gcd(a, b));
+        }
+
+        // Настройка пазла
+        function puzzleSet(puzzle, DISK_Y, WIDTH, HEIGHT) {
+            let angleShift = 0;
+            let DISK_SECTORS = [];
+            let diskPuzzle = [];
+            
+            if (["Nautilus 7", "Nautilus 8", "Nautilus 10", "Nautilus 12"].includes(puzzle)) {
+                if (puzzle === "Nautilus 7") {
+                    DISK_SECTORS = [20, 30, 40, 50, 60, 70, 90];
+                } else if (puzzle === "Nautilus 8") {
+                    DISK_SECTORS = [10, 20, 30, 40, 50, 60, 70, 80];
+                } else if (puzzle === "Nautilus 10") {
+                    DISK_SECTORS = [6,12,18,24,30,42,48,54,60,66];
+                } else if (puzzle === "Nautilus 12") {
+                    DISK_SECTORS = [8,12,16,20,24,28,32,36,40,44,48,52];
+                }
+                
+                const disk1 = {
+                    sectors: DISK_SECTORS,
+                    type: "spiral"
+                };
+                diskPuzzle = [disk1, {...disk1}];
+            } else if (["Helix 7r", "Helix 7r-b", "Helix 11r", "Helix 8", "Helix 9", "Helix 11", "Helix 11-b", "Helix 12", "Helix 13", "Helix 13-b", "Helix 14", "Helix 14-b", "Helix 19", "Helix 20"].includes(puzzle)) {
+                if (puzzle === "Helix 7r") {
+                    DISK_SECTORS = [36, 48, 60, 72, 60, 48, 36];
+                } else if (puzzle === "Helix 7r-b") {
+                    DISK_SECTORS = [63, 54, 45, 36, 45, 54, 63];
+                } else if (puzzle === "Helix 11r") {
+                    DISK_SECTORS = [10, 20, 30, 40, 50, 60, 50, 40, 30, 20, 10];
+                } else if (puzzle === "Helix 8") {
+                    DISK_SECTORS = [9, 18, 27, 36, 54, 63, 72, 81];
+                } else if (puzzle === "Helix 9") {
+                    DISK_SECTORS = [12,18,24,36,42,48,54,60,66];
+                } else if (puzzle === "Helix 11") {
+                    DISK_SECTORS = [5,10,15,20,25,35,40,45,50,55,60];
+                } else if (puzzle === "Helix 11-b") {
+                    DISK_SECTORS = [12,16,20,24,28,32,36,40,44,52,56];
+                } else if (puzzle === "Helix 12") {
+                    DISK_SECTORS = [12,15,18,21,24,27,33,36,39,42,45,48];
+                } else if (puzzle === "Helix 13") {
+                    DISK_SECTORS = [9,12,15,18,21,24,27,30,33,36,42,45,48];
+                } else if (puzzle === "Helix 13-b") {
+                    DISK_SECTORS = [14,16,20,22,24,26,28,30,32,34,36,38,40];
+                } else if (puzzle === "Helix 14") {
+                    DISK_SECTORS = [6,9,12,15,18,21,24,27,30,33,36,39,42,48];
+                } else if (puzzle === "Helix 14-b") {
+                    DISK_SECTORS = [12,14,16,18,20,22,24,26,28,32,34,36,38,40];
+                } else if (puzzle === "Helix 19") {
+                    DISK_SECTORS = [9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
+                } else if (puzzle === "Helix 20") {
+                    DISK_SECTORS = [8,9,10,11,12,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28];
+                }
+                
+                const disk1 = {
+                    sectors: DISK_SECTORS,
+                    type: "spiral"
+                };
+                diskPuzzle = [disk1, {...disk1}];
+            } else if (["Phibonachi 3", "Phibonachi 4", "Phibonachi 4-b", "Phibonachi 4-c", "Phibonachi 4-d", "Phibonachi 4-e", "Phibonachi 5", "Phibonachi 5-b", "Phibonachi 6", "Phibonachi 6-b"].includes(puzzle)) {
+                if (puzzle === "Phibonachi 3") {
+                    DISK_SECTORS = [30, 60, 90, 30, 60, 90];
+                } else if (puzzle === "Phibonachi 4") {
+                    DISK_SECTORS = [20, 30, 50, 80, 20, 30, 50, 80];
+                } else if (puzzle === "Phibonachi 4-b") {
+                    DISK_SECTORS = [24, 27, 51, 78, 24, 27, 51, 78];
+                } else if (puzzle === "Phibonachi 4-c") {
+                    DISK_SECTORS = [16, 33, 49, 82, 16, 33, 49, 82];
+                } else if (puzzle === "Phibonachi 4-d") {
+                    DISK_SECTORS = [12, 36, 48, 84, 12, 36, 48, 84];
+                } else if (puzzle === "Phibonachi 4-e") {
+                    DISK_SECTORS = [8, 39, 47, 86, 8, 39, 47, 86];
+                } else if (puzzle === "Phibonachi 5") {
+                    DISK_SECTORS = [15, 15, 30, 45, 75, 15, 15, 30, 45, 75];
+                } else if (puzzle === "Phibonachi 5-b") {
+                    DISK_SECTORS = [8, 20, 28, 48, 76, 8, 20, 28, 48, 76];
+                } else if (puzzle === "Phibonachi 6") {
+                    DISK_SECTORS = [9, 9, 18, 27, 45, 72, 9, 9, 18, 27, 45, 72];
+                } else if (puzzle === "Phibonachi 6-b") {
+                    DISK_SECTORS = [6, 11, 17, 28, 45, 73, 6, 11, 17, 28, 45, 73];
+                }
+                
+                const disk1 = {
+                    sectors: DISK_SECTORS,
+                    type: "spiral"
+                };
+                diskPuzzle = [disk1, {...disk1}];
+            } else if (["Square-1", "Square-2", "Easy Square-1", "Nautilus Cube"].includes(puzzle)) {
+                if (puzzle === "Square-1") {
+                    DISK_SECTORS = [30, 60, 30, 60, 30, 60, 30, 60];
+                    angleShift = - DISK_SECTORS[0]/2;
+                } else if (puzzle === "Square-2") {
+                    DISK_SECTORS = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
+                    angleShift = - DISK_SECTORS[0]/2;
+                } else if (puzzle === "Easy Square-1") {
+                    DISK_SECTORS = [36, 54, 36, 54, 36, 54, 36, 54];
+                    angleShift = - DISK_SECTORS[0]/2;
+                }
+                
+                let colorsMas1, colorsMas2;
+                if (puzzle === "Nautilus Cube") {
+                    DISK_SECTORS = [20, 30, 40, 50, 60, 70, 90];
+                    colorsMas1 = colorsMas2 = [clRed, clOrange, clYellow, clLime, clDeepSky, clPurple, clWhite];
+                } else {
+                    colorsMas1 = new Array(DISK_SECTORS.length).fill(clBlue);
+                    colorsMas2 = new Array(DISK_SECTORS.length).fill(clGreen);
+                }
+                
+                const disk1 = {
+                    sectors: DISK_SECTORS,
+                    angleShift: angleShift,
+                    colors: [...colorsMas1],
+                    type: "square"
+                };
+                const disk2 = {
+                    sectors: DISK_SECTORS,
+                    angleShift: angleShift,
+                    colors: [...colorsMas2],
+                    type: "square"
+                };
+                diskPuzzle = [disk1, disk2];
+            } else if (["Cheese", "Sajt", "Rainbow Puck"].includes(puzzle)) {
+                if (puzzle === "Sajt") {
+                    DISK_SECTORS = [60, 60, 60, 60, 60, 60];
+                    colorsMas = [clRed, clRed, clYellow, clYellow, clOrange, clOrange];
+                } else if (puzzle === "Rainbow Puck") {
+                    DISK_SECTORS = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
+                    colorsMas = [clRed, clRed, clYellow, clYellow, clOrange, clOrange, clGreen, clGreen, clBlue, clBlue, clPurple, clPurple];
+                } else if (puzzle === "Cheese") {
+                    DISK_SECTORS = [60, 60, 60, 60, 60, 60];
+                    colorsMas = [clRed, clYellow, clOrange, clGreen, clBlue, clPurple];
+                }
+                
+                const disk1 = {
+                    sectors: DISK_SECTORS,
+                    colors: [...colorsMas],
+                    type: "circle"
+                };
+                
+                if (puzzle === "Cheese") {
+                    diskPuzzle = [disk1, {...disk1}];
+                } else {
+                    diskPuzzle = [disk1];
+                }
+            } else {
+                return { diskPuzzle: [], DISK_ANGLE: 0 };
+            }
+            
+            // Настройка позиций и цветов дисков
+            for (let nn = 0; nn < diskPuzzle.length; nn++) {
+                const disk = diskPuzzle[nn];
+                let x;
+                
+                if (diskPuzzle.length === 1) {
+                    x = WIDTH / 2;
+                } else {
+                    if (nn === 0) {
+                        x = WIDTH / 4;
+                    } else {
+                        x = WIDTH - WIDTH / 4;
+                    }
+                }
+                
+                const y = DISK_Y;
+                
+                disk.name = puzzle;
+                disk.x = x;
+                disk.y = y;
+                disk.targetRotation = 0;
+                disk.spline = [];
+                disk.animating = false;
+                
+                if (disk.rotation === undefined) {
+                    disk.rotation = 0;
+                }
+                
+                if (disk.angleShift === undefined) {
+                    disk.angleShift = 0;
+                }
+                
+                // Установка цветов по умолчанию, если не заданы
+                if (disk.colors === undefined) {
+                    const size = disk.sectors.length;
+                    let colorsMas;
+                    
+                    if (size === 6) {
+                        colorsMas = [clWhite, clRed, clYellow, clGreen, clBlue, clPurple];
+                    } else if (size === 7) {
+                        colorsMas = [clRed, clOrange, clYellow, clGreen, clDeepSky, clBlue, clPurple];
+                    } else if (size === 8) {
+                        colorsMas = [clRed, clOrange, clYellow, clLime, clGreen, clDeepSky, clBlue, clPurple];
+                    } else if (size === 9) {
+                        colorsMas = [clRed, clOrange, clYellow, clLime, clGreen, clDeepSky, clBlue, clLilia, clPurple];
+                    } else if (size === 10) {
+                        colorsMas = [clFuchsia, clRed, clOrange, clYellow, clLime, clGreen, clDeepSky, clBlue, clLilia, clPurple];
+                    } else if (size === 11) {
+                        colorsMas = [clFuchsia, clRed, clOrange, clYellow, clLime, clGreen, clCyan, clDeepSky, clBlue, clLilia, clPurple];
+                    } else if (size === 12) {
+                        colorsMas = [clFuchsia, clRed, clOrange, clYellow, clGreenYellow, clLime, clGreen, clCyan, clDeepSky, clBlue, clLilia, clPurple];
+                    } else {
+                        // Для большего количества секторов используем радужную палитру
+                        colorsMas = [];
+                        const hueStep = 360 / size;
+                        for (let i = 0; i < size; i++) {
+                            const hue = i * hueStep;
+                            colorsMas.push(`hsl(${hue}, 100%, 50%)`);
+                        }
+                    }
+                    
+                    disk.colors = [...colorsMas];
+                }
+            }
+            
+            // Вычисление угла поворота
+            DISK_ANGLE = gcdArray(DISK_SECTORS);
+            if (angleShift) {
+                DISK_ANGLE = gcd(DISK_ANGLE, Math.abs(angleShift));
+            }
+            
+            return { diskPuzzle, DISK_ANGLE };
+        }
+
+        // Перемешивание пазла
+        function scrambleGame() {
+            const scrambleMove = diskCount * diskPuzzle[0].sectors.length * 100;
+            const kol = 180 / DISK_ANGLE;
+            
+            for (let i = 0; i < scrambleMove; i++) {
+                for (const disk of diskPuzzle) {
+                    let count = 10;
+                    while (count > 0) {
+                        count--;
+                        const direct = Math.random() > 0.5 ? 1 : -1;
+                        const step = Math.floor(Math.random() * kol) + 1;
+                        rotateDisk(disk, direct * step * DISK_ANGLE);
+                        disk.rotation = disk.targetRotation;
+                        if (canFlip(disk)) break;
+                    }
+                    if (canFlipAllDisk()) {
+                        flipDisks();
+                    }
+                }
+            }
+            
+            for (const disk of diskPuzzle) {
+                disk.animating = false;
+            }
+        }
+
+        // Вращение точки
+        function rotatePoint(x, y, centerX, centerY, angleDeg) {
+            const angle = angleDeg * Math.PI / 180;
+            const adjustedX = x - centerX;
+            const adjustedY = y - centerY;
+            const cosRad = Math.cos(angle);
+            const sinRad = Math.sin(angle);
+            const qx = cosRad * adjustedX + sinRad * adjustedY;
+            const qy = cosRad * adjustedY - sinRad * adjustedX;
+            return [centerX + qx, centerY + qy];
+        }
+
+        // Вращение части сплайна
+        function rotatePart(spline, centerX, centerY, angle) {
+            return spline.map(point => {
+                let [x, y] = point;
+                x += centerX;
+                y += centerY;
+                if (angle !== 0) {
+                    [x, y] = rotatePoint(x, y, centerX, centerY, -angle);
+                }
+                return [x, y];
+            });
+        }
+
+        // Отражение по оси X
+        function mirrorXPart(spline, angle) {
+            let splineNew = rotatePart(spline, 0, 0, -angle);
+            splineNew = splineNew.map(([x, y]) => [x, -y]);
+            const splineRev = [...splineNew].reverse();
+            const last = splineRev.pop();
+            splineRev.unshift(last);
+            return splineNew;
+        }
+
+        // Точка на квадрате
+        function squarePoint(edgeSize, angle, rotateAngle = 0) {
+            const halfSize = edgeSize / 2;
+            const normalizedAngle = angle % 360;
+            
+            let x, y;
+            
+            if (45 <= normalizedAngle && normalizedAngle < 135) {
+                x = halfSize / Math.tan(normalizedAngle * Math.PI / 180);
+                y = halfSize;
+            } else if (135 <= normalizedAngle && normalizedAngle < 225) {
+                x = -halfSize;
+                y = -halfSize * Math.tan((normalizedAngle - 180) * Math.PI / 180);
+            } else if (225 <= normalizedAngle && normalizedAngle < 315) {
+                x = -halfSize / Math.tan((normalizedAngle - 180) * Math.PI / 180);
+                y = -halfSize;
+            } else {
+                x = halfSize;
+                y = halfSize * Math.tan(normalizedAngle < 45 ? normalizedAngle * Math.PI / 180 : (normalizedAngle - 360) * Math.PI / 180);
+            }
+            
+            return rotatePoint(x, y, 0, 0, rotateAngle);
+        }
+
+        // Вычисление сплайна
+        function calcSpline(disk) {
+            const angleShift = disk.angleShift;
+            let startAngle = angleShift;
+            disk.spline = [];
+            
+            for (const angleSect of disk.sectors) {
+                const endAngle = startAngle + angleSect;
+                const spline = [[0, 0]];
+                const numPoints = Math.max(10, angleSect);
+                
+                for (let i = 0; i <= numPoints; i++) {
+                    const angle = startAngle + (endAngle - startAngle) * i / numPoints;
+                    const angleRad = angle * Math.PI / 180;
+                    
+                    if (disk.type === "circle") {
+                        spline.push([
+                            DISK_RADIUS * Math.cos(angleRad),
+                            DISK_RADIUS * Math.sin(angleRad)
+                        ]);
+                    } else if (disk.type === "spiral") {
+                        const start = 0.65;
+                        const kk = (1 - start) / (2 * Math.PI);
+                        const mul = start + angleRad * kk;
+                        spline.push([
+                            mul * DISK_RADIUS * Math.cos(angleRad),
+                            mul * DISK_RADIUS * Math.sin(angleRad)
+                        ]);
+                    } else if (disk.type === "square") {
+                        const point = squarePoint(DISK_RADIUS * 1.5, angle);
+                        spline.push(point);
+                    }
+                }
+                
+                const splineIni = rotatePart(spline, 0, 0, -startAngle);
+                disk.spline.push(splineIni);
+                startAngle = endAngle;
+            }
+        }
+
+        // Отрисовка диска
+        function drawDisk(disk) {
+            let startAngle = disk.rotation;
+            const angleShift = disk.angleShift;
+            
+            for (let nn = 0; nn < disk.sectors.length; nn++) {
+                const angle = disk.sectors[nn];
+                const spline = disk.spline[nn];
+                const color = disk.colors[nn];
+                
+                const points = rotatePart(spline, disk.x, disk.y, startAngle + angleShift);
+                
+                if (points.length > 2) {
+                    // Рисуем заполненный полигон
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    for (let i = 1; i < points.length; i++) {
+                        ctx.lineTo(points[i][0], points[i][1]);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Рисуем контур
+                    ctx.strokeStyle = clBlack;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    for (let i = 1; i < points.length; i++) {
+                        ctx.lineTo(points[i][0], points[i][1]);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+                
+                startAngle += angle;
+            }
+        }
+
+        // Отрисовка информации
+        function drawInfo(disk, index) {
+            const topHalf = getTopHalf(disk);
+            const sectorsText = `Top sectors: ${topHalf.sectors.join(', ')}°`;
+            const color = canFlip(disk) ? "#0000FF" : "#FF0000";
+            const sumText = `Total: ${topHalf.total}°`;
+            
+            const infoPanel = index === 0 ? infoPanel1 : infoPanel2;
+            infoPanel.innerHTML = `${sectorsText}<br><span style="color:${color}">${sumText}</span>`;
+        }
+
+        // Вращение диска
+        function rotateDisk(disk, angle) {
+            if (angle === 1 || angle === -1) {
+                disk.targetRotation = -angle;
+            } else {
+                disk.targetRotation = (disk.rotation - angle) % 360;
+                if (disk.targetRotation < 0) disk.targetRotation += 360;
+            }
+            disk.animating = true;
+        }
+
+        // Обновление анимированного диска
+        function updateAnimatedDisk(disk) {
+            if (disk.animating) {
+                if (disk.targetRotation === 1 || disk.targetRotation === -1) {
+                    const step = disk.targetRotation;
+                    disk.rotation = (disk.rotation + step) % 360;
+                    if (canFlip(disk)) {
+                        disk.animating = false;
+                    }
+                } else {
+                    let diff = (disk.targetRotation - disk.rotation + 180) % 360 - 180;
+                    if (Math.abs(diff) > 0.5) {
+                        const step = Math.min(1, Math.abs(diff)) * (diff > 0 ? 1 : -1);
+                        disk.rotation = (disk.rotation + step) % 360;
+                    } else {
+                        disk.rotation = disk.targetRotation;
+                        disk.animating = false;
+                    }
+                }
+            }
+        }
+
+        // Получение элемента массива по позиции
+        function masPos(mas, pos) {
+            const ll = mas.length;
+            while (pos >= ll) {
+                pos -= ll;
+            }
+            return mas[pos];
+        }
+
+        // Получение верхней половины
+        function getTopHalf(disk) {
+            let currentAngle = disk.rotation + disk.angleShift;
+            let sumAngles = 0;
+            let pos180 = -1;
+            const result = [];
+            
+            let pos = 0;
+            const len2 = disk.sectors.length * 2;
+            let flTop = -1;
+            
+            while (pos < len2) {
+                const angle = masPos(disk.sectors, pos);
+                let start = currentAngle % 360;
+                let end = (currentAngle + angle) % 360;
+                end = end === 0 ? 360 : end;
+                
+                if (start < end && start >= 180 && end <= 360) {
+                    if (flTop >= 0) {
+                        result.push({
+                            angle: angle,
+                            color: masPos(disk.colors, pos),
+                            spline: masPos(disk.spline, pos)
+                        });
+                        sumAngles += angle;
+                        flTop++;
+                        if (start === 180) {
+                            pos180 = pos < disk.sectors.length ? pos : pos - disk.sectors.length;
+                        }
+                    }
+                } else if (flTop === -1) {
+                    flTop = 0;
+                } else if (flTop > 0) {
+                    break;
+                }
+                
+                currentAngle += angle;
+                pos++;
+                if (sumAngles >= 180) break;
+            }
+            
+            return {
+                sectors: result.map(item => item.angle),
+                colors: result.map(item => item.color),
+                spline: result.map(item => item.spline),
+                total: sumAngles,
+                pos: pos180
+            };
+        }
+
+        // Проверка возможности переворота диска
+        function canFlip(disk) {
+            const topHalf = getTopHalf(disk);
+            return Math.abs(topHalf.total - 180) < 0.1;
+        }
+
+        // Проверка возможности переворота всех дисков
+        function canFlipAllDisk() {
+            let flFlip = 0;
+            for (const disk of diskPuzzle) {
+                if (canFlip(disk)) {
+                    flFlip++;
+                }
+            }
+            return flFlip === diskCount;
+        }
+
+        // Переворот двух групп
+        function reverseTwoGroup(arr1, start1, length1, arr2, start2, length2) {
+            const mas1 = [...arr1.slice(start1), ...arr1.slice(0, start1)];
+            const mas2 = [...arr2.slice(start2), ...arr2.slice(0, start2)];
+            
+            const group1 = mas1.slice(0, length1);
+            const res1 = mas1.slice(length1);
+            const group2 = mas2.slice(0, length2);
+            const res2 = mas2.slice(length2);
+            
+            const reversedGroup1 = [...group1].reverse();
+            const reversedGroup2 = [...group2].reverse();
+            
+            const result1 = [...res1, ...reversedGroup2];
+            const result2 = [...res2, ...reversedGroup1];
+            
+            return [result1, result2];
+        }
+
+        // Переворот группы
+        function reverseGroup(arr, start, length) {
+            const mas = [...arr.slice(start), ...arr.slice(0, start)];
+            const group = mas.slice(0, length);
+            const res = mas.slice(length);
+            const reversedGroup = [...group].reverse();
+            return [...res, ...reversedGroup];
+        }
+
+        // Переворот дисков
+        function flipDisks() {
+            if (!canFlipAllDisk()) return;
+            const blockMas = ["sectors", "colors", "spline"];
+            
+            if (diskCount === 1 || diskCount === 3) {
+                const disk = diskCount === 1 ? diskPuzzle[0] : diskPuzzle[1];
+                const diskTop = getTopHalf(disk);
+                
+                const pos = diskTop.pos;
+                const length = diskTop.sectors.length;
+                const size = disk.sectors.length;
+                
+                for (let nn = 0; nn < length; nn++) {
+                    const angle = diskTop.sectors[nn];
+                    const spline = diskTop.spline[nn];
+                    let posMas = pos + nn;
+                    if (posMas >= size) posMas -= size;
+                    disk.spline[posMas] = mirrorXPart(spline, angle);
+                }
+                
+                for (const block of blockMas) {
+                    disk[block] = reverseGroup(disk[block], pos, length);
+                }
+                disk.rotation = 0;
+            }
+            
+            if (diskCount === 2 || diskCount === 3) {
+                const disk1 = diskCount === 2 ? diskPuzzle[0] : diskPuzzle[0];
+                const disk2 = diskCount === 2 ? diskPuzzle[1] : diskPuzzle[2];
+                const disk1Top = getTopHalf(disk1);
+                const disk2Top = getTopHalf(disk2);
+                
+                const pos1 = disk1Top.pos;
+                const length1 = disk1Top.sectors.length;
+                const size1 = disk1.sectors.length;
+                
+                for (let nn = 0; nn < length1; nn++) {
+                    const angle = disk1Top.sectors[nn];
+                    const spline = disk1Top.spline[nn];
+                    let posMas = pos1 + nn;
+                    if (posMas >= size1) posMas -= size1;
+                    disk1.spline[posMas] = mirrorXPart(spline, angle);
+                }
+                
+                const pos2 = disk2Top.pos;
+                const length2 = disk2Top.sectors.length;
+                const size2 = disk2.sectors.length;
+                
+                for (let nn = 0; nn < length2; nn++) {
+                    const angle = disk2Top.sectors[nn];
+                    const spline = disk2Top.spline[nn];
+                    let posMas = pos2 + nn;
+                    if (posMas >= size2) posMas -= size2;
+                    disk2.spline[posMas] = mirrorXPart(spline, angle);
+                }
+                
+                for (const block of blockMas) {
+                    const [result1, result2] = reverseTwoGroup(
+                        disk1[block], pos1, length1,
+                        disk2[block], pos2, length2
+                    );
+                    disk1[block] = result1;
+                    disk2[block] = result2;
+                }
+                
+                disk1.rotation = 0;
+                disk2.rotation = 0;
+                disk1.angleShift = 0;
+                disk2.angleShift = 0;
+            }
+        }
+
+        // Следующий пазл
+        function nextPuzzle(direction) {
+            const puzzles = Array.from(puzzleSelector.options).map(opt => opt.value);
+            const currentIndex = puzzles.indexOf(currentPuzzle);
+            let newIndex = currentIndex + direction;
+            
+            if (newIndex < 0) newIndex = puzzles.length - 1;
+            if (newIndex >= puzzles.length) newIndex = 0;
+            
+            currentPuzzle = puzzles[newIndex];
+            puzzleSelector.value = currentPuzzle;
+            initGame();
+        }
+
+        // Обновление UI
+        function updateUI() {
+            // Обновляем позиции элементов управления в зависимости от количества дисков
+            if (diskCount === 1) {
+                // Центрируем элементы управления
+                document.querySelector('.controls').style.justifyContent = 'center';
+            } else {
+                document.querySelector('.controls').style.justifyContent = 'flex-start';
+            }
+        }
+
+        // Показать/скрыть модальное окно About
+        function showAboutModal() {
+            aboutModal.style.display = 'flex';
+        }
+        
+        function hideAboutModal() {
+            aboutModal.style.display = 'none';
+        }
+
+        // Обработка событий
+        function setupEventListeners() {
+            // Выбор пазла
+            puzzleSelector.addEventListener('change', () => {
+                currentPuzzle = puzzleSelector.value;
+                initGame();
+            });
+            
+            // Кнопки
+            resetBtn.addEventListener('click', initGame);
+            scrambleBtn.addEventListener('click', scrambleGame);
+            leftBtn.addEventListener('click', () => nextPuzzle(-1));
+            rightBtn.addEventListener('click', () => nextPuzzle(1));
+            aboutBtn.addEventListener('click', showAboutModal);
+            
+            // Чекбокс
+            oneStepCheckbox.addEventListener('change', () => {
+                flOneStep = oneStepCheckbox.checked;
+            });
+            
+            // Закрытие модального окна About
+            closeAbout.addEventListener('click', hideAboutModal);
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) {
+                    hideAboutModal();
+                }
+            });
+            
+            // Колесо мыши для вращения дисков (ИСПРАВЛЕНО НАПРАВЛЕНИЕ)
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                for (const disk of diskPuzzle) {
+                    if (disk.animating) continue;
+                    
+                    const dx = mouseX - disk.x;
+                    const dy = mouseY - disk.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < DISK_RADIUS) {
+                        // ИЗМЕНЕНО: поменяно направление вращения
+                        if (!flOneStep) {
+                            rotateDisk(disk, e.deltaY > 0 ? -1 : 1);
+                        } else {
+                            rotateDisk(disk, (e.deltaY > 0 ? -1 : 1) * DISK_ANGLE);
+                        }
+                        break;
+                    }
+                }
+            });
+            
+            // Клик для переворота дисков
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                if (Math.abs(mouseY - diskPuzzle[0].y) < DISK_RADIUS) {
+                    if (canFlipAllDisk()) {
+                        flipDisks();
+                    }
+                }
+            });
+        }
+
+        // Основной цикл игры
+        function gameLoop() {
+            // Очистка canvas
+            ctx.fillStyle = clWhite;
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            
+            // Обновление анимации
+            for (const disk of diskPuzzle) {
+                for (let sp = 0; sp < ROTATION_SPEED; sp++) {
+                    updateAnimatedDisk(disk);
+                    if (canFlip(disk)) break;
+                }
+            }
+            
+            // Отрисовка дисков
+            for (const disk of diskPuzzle) {
+                drawDisk(disk);
+            }
+            
+            // Отрисовка разделителя
+            separatorVisible = canFlipAllDisk();
+            if (separatorVisible && diskPuzzle.length > 0) {
+                ctx.strokeStyle = clGreen;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(diskPuzzle[0].x - DISK_RADIUS - 30, diskPuzzle[0].y);
+                ctx.lineTo(diskPuzzle[diskPuzzle.length - 1].x + DISK_RADIUS + 30, diskPuzzle[diskPuzzle.length - 1].y);
+                ctx.stroke();
+            }
+            
+            // Отображение информации
+            for (let i = 0; i < diskPuzzle.length; i++) {
+                drawInfo(diskPuzzle[i], i);
+            }
+            
+            // Следующий кадр
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Инициализация при загрузке
+        window.addEventListener('load', () => {
+            setupEventListeners();
+            initGame();
+            gameLoop();
+        });
+    </script>
+</body>
+</html>
