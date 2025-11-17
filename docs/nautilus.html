@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nautilus Simulator</title>
     <style>
         * {
@@ -17,22 +17,46 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
-            touch-action: manipulation;
             overflow: hidden;
+        }
+        
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 800px;
+            max-height: 100vh;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        #ui-container {
+            padding: 10px;
+            background-color: white;
+            border-bottom: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+        
+        select, button {
+            padding: 5px 10px;
+            font-size: 14px;
         }
         
         #game-container {
             position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 800px;
-            max-height: 600px;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            background-color: white;
+            flex: 1;
+            min-height: 0; /* Важно для flex-контейнера */
         }
         
         canvas {
@@ -41,35 +65,9 @@
             height: 100%;
         }
         
-        #ui-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            pointer-events: none;
-        }
-        
-        #ui-container > * {
-            pointer-events: auto;
-        }
-        
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        
-        select, button {
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-        
         .info-panel {
             position: absolute;
-            bottom: 100px;
+            bottom: 20px;
             background-color: rgba(255, 255, 255, 0.8);
             padding: 5px;
             border-radius: 3px;
@@ -135,13 +133,13 @@
             
             select, button {
                 padding: 8px 12px;
-                font-size: 16px; /* Увеличиваем для удобства на мобильных */
+                font-size: 16px;
             }
             
             .info-panel {
                 font-size: 14px;
                 min-width: 120px;
-                bottom: 80px;
+                bottom: 15px;
             }
             
             #ui-container {
@@ -163,14 +161,27 @@
             .info-panel {
                 font-size: 12px;
                 min-width: 100px;
-                bottom: 60px;
+                bottom: 10px;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            #game-wrapper {
+                max-height: 95vh;
+            }
+            
+            .controls {
+                margin-bottom: 5px;
+            }
+            
+            .info-panel {
+                bottom: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="game-canvas"></canvas>
+    <div id="game-wrapper">
         <div id="ui-container">
             <div class="controls">
                 <select id="puzzle-selector">
@@ -221,8 +232,11 @@
             </div>
             <div id="status-label">Simulator: Nautilus 7</div>
         </div>
-        <div id="info-panel-1" class="info-panel">Top sectors: <br>Total: </div>
-        <div id="info-panel-2" class="info-panel" style="display: none;">Top sectors: <br>Total: </div>
+        <div id="game-container">
+            <canvas id="game-canvas"></canvas>
+            <div id="info-panel-1" class="info-panel">Top sectors: <br>Total: </div>
+            <div id="info-panel-2" class="info-panel" style="display: none;">Top sectors: <br>Total: </div>
+        </div>
     </div>
 
     <!-- Модальное окно About -->
@@ -240,9 +254,9 @@
         // Константы (базовые размеры)
         const VERSION = "1.0";
         const BASE_WIDTH = 800;
-        const BASE_HEIGHT = 600;
-        const BASE_DISK_RADIUS = 150;
-        const BASE_DISK_Y = BASE_DISK_RADIUS + 80;
+        const BASE_HEIGHT = 500; // Уменьшили высоту игровой области
+        const BASE_DISK_RADIUS = 120; // Уменьшили радиус дисков
+        const BASE_DISK_Y = BASE_DISK_RADIUS + 50; // Скорректировали позицию
         const ROTATION_SPEED = 4;
 
         // Текущие размеры (будут меняться при адаптации)
@@ -331,6 +345,9 @@
             HEIGHT = availableHeight;
             DISK_RADIUS = BASE_DISK_RADIUS * scaleFactor;
             DISK_Y = BASE_DISK_Y * scaleFactor;
+            
+            // Ограничиваем минимальный размер дисков
+            if (DISK_RADIUS < 60) DISK_RADIUS = 60;
             
             // Устанавливаем размеры canvas
             canvas.width = WIDTH;
@@ -1149,6 +1166,9 @@
             
             // Тап пальцем для вращения дисков (по часовой стрелке)
             canvas.addEventListener('touchstart', (e) => {
+                // Разрешаем масштабирование двумя пальцами
+                if (e.touches.length > 1) return;
+                
                 e.preventDefault();
                 const rect = canvas.getBoundingClientRect();
                 const touch = e.touches[0];
