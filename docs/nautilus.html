@@ -128,12 +128,12 @@
         /* Адаптивные стили для мобильных устройств */
         @media (max-width: 768px) {
             .controls {
-                gap: 5px;
+                gap: 3px; /* Уменьшили зазоры */
             }
             
             select, button {
-                padding: 8px 12px;
-                font-size: 16px;
+                padding: 2px 4px; /* Уменьшили в 3 раза (было 8px 12px) */
+                font-size: 10px; /* Уменьшили в 3 раза (было 16px) */
             }
             
             .info-panel {
@@ -144,6 +144,10 @@
             
             #ui-container {
                 padding: 5px;
+            }
+            
+            #status-label {
+                font-size: 12px;
             }
         }
         
@@ -156,6 +160,8 @@
             select, button {
                 width: 100%;
                 max-width: 200px;
+                padding: 2px 4px;
+                font-size: 10px;
             }
             
             .info-panel {
@@ -254,9 +260,9 @@
         // Константы (базовые размеры)
         const VERSION = "1.0";
         const BASE_WIDTH = 800;
-        const BASE_HEIGHT = 500; // Уменьшили высоту игровой области
-        const BASE_DISK_RADIUS = 120; // Уменьшили радиус дисков
-        const BASE_DISK_Y = BASE_DISK_RADIUS + 50; // Скорректировали позицию
+        const BASE_HEIGHT = 550; // Немного увеличили высоту игровой области
+        const BASE_DISK_RADIUS = 180; // Увеличили радиус дисков для компьютеров
+        const BASE_DISK_Y = BASE_DISK_RADIUS + 60;
         const ROTATION_SPEED = 4;
 
         // Текущие размеры (будут меняться при адаптации)
@@ -343,11 +349,21 @@
             // Устанавливаем новые размеры
             WIDTH = availableWidth;
             HEIGHT = availableHeight;
-            DISK_RADIUS = BASE_DISK_RADIUS * scaleFactor;
-            DISK_Y = BASE_DISK_Y * scaleFactor;
             
-            // Ограничиваем минимальный размер дисков
-            if (DISK_RADIUS < 60) DISK_RADIUS = 60;
+            // Для больших экранов используем большие диски, для мобильных - меньшие
+            if (window.innerWidth >= 768) {
+                // Компьютеры - используем базовый размер или больше
+                DISK_RADIUS = BASE_DISK_RADIUS * scaleFactor;
+                // Ограничиваем максимальный размер для очень больших экранов
+                if (DISK_RADIUS > 200) DISK_RADIUS = 200;
+            } else {
+                // Мобильные устройства - используем меньшие диски
+                DISK_RADIUS = BASE_DISK_RADIUS * scaleFactor * 0.8;
+                // Ограничиваем минимальный размер дисков
+                if (DISK_RADIUS < 80) DISK_RADIUS = 80;
+            }
+            
+            DISK_Y = BASE_DISK_Y * scaleFactor;
             
             // Устанавливаем размеры canvas
             canvas.width = WIDTH;
